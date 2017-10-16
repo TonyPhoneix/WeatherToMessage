@@ -6,7 +6,6 @@ import android.content.Intent;
 import android.icu.util.Calendar;
 import android.icu.util.TimeZone;
 import android.os.Bundle;
-import android.os.SystemClock;
 import android.support.annotation.IdRes;
 import android.support.v7.app.AppCompatActivity;
 import android.widget.Button;
@@ -16,7 +15,6 @@ import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.orhanobut.logger.Logger;
 import com.tony.weathertomessage.service.WeatherService;
 import com.tony.weathertomessage.utils.SharedPreferenceUtil;
 import com.tony.weathertomessage.utils.StringUtils;
@@ -26,7 +24,7 @@ import butterknife.Bind;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity{
 
     @Bind(R.id.phone)
     EditText phone;
@@ -49,14 +47,13 @@ public class MainActivity extends AppCompatActivity {
     @Bind(R.id.start_Btn)
     Button startBtn;
     private SharedPreferenceUtil preferenceUtil;
-    //    一天的毫秒数
-    public static final int DAY = 1 * 60 * 1000;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
+
         preferenceUtil = SharedPreferenceUtil.getInstance();
 //        初始化一些默认值
         phone.setHint(preferenceUtil.getPhoneNumber());
@@ -122,18 +119,17 @@ public class MainActivity extends AppCompatActivity {
 
     @OnClick(R.id.start_Btn)
     public void onClickStart() {
-        int timeInterval = preferenceUtil.getTimeInterval();
-        int hour = preferenceUtil.getHour();
-        int minute = preferenceUtil.getMinute();
-//        默认为7：00
-        setAlarmTime(timeInterval, hour, minute);
+            setAlarmTime();
     }
-
 
     /**
      * 设置系统闹钟，并且重复唤醒服务
      */
-    private void setAlarmTime(int timeInterval, int hour, int minute) {
+    private void setAlarmTime() {
+        int timeInterval = preferenceUtil.getTimeInterval();
+        int hour = preferenceUtil.getHour();
+        int minute = preferenceUtil.getMinute();
+
         //        然后再设置时间，去唤醒Service
         long systemTime = System.currentTimeMillis();
         Calendar calendar = Calendar.getInstance();
@@ -152,15 +148,12 @@ public class MainActivity extends AppCompatActivity {
             calendar.add(Calendar.DAY_OF_MONTH, 1);
             selectTime = calendar.getTimeInMillis();
         }
-// 计算现在时间到设定时间的时间差
-        long time = selectTime - systemTime;
-        systemTime += time;
-// 进行闹铃注册
+        // 进行闹铃注册
         AlarmManager am = (AlarmManager) getSystemService(ALARM_SERVICE);
         Intent clock = new Intent(this, WeatherService.class);
         PendingIntent sender = PendingIntent.getService(this, 1, clock, PendingIntent.FLAG_UPDATE_CURRENT);
         am.setRepeating(AlarmManager.RTC_WAKEUP,
-                systemTime, timeInterval * 60 * 60 * 1000, sender);
+                selectTime, timeInterval * 60 * 60 * 1000, sender);
         Toast.makeText(MainActivity.this, "服务开启成功! ", Toast.LENGTH_SHORT).show();
     }
 }
