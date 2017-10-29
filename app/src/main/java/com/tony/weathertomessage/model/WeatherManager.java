@@ -1,6 +1,6 @@
 package com.tony.weathertomessage.model;
 
-import com.tony.weathertomessage.api.domain.Weather;
+import com.tony.weathertomessage.api.domain.WeatherInfo;
 import com.tony.weathertomessage.api.inter.WeatherInter;
 import com.tony.weathertomessage.utils.StringUtils;
 
@@ -19,7 +19,7 @@ public class WeatherManager {
 
     private WeatherManager() {
         retrofit = new Retrofit.Builder()
-                .baseUrl("http://www.sojson.com/open/api/weather/")
+                .baseUrl("http://weixin.jirengu.com/weather/")
                 .addConverterFactory(GsonConverterFactory.create())
                 .build();
     }
@@ -44,12 +44,12 @@ public class WeatherManager {
      * @param city
      * @param callback
      */
-    public  void getWeatherData(String city, Callback<Weather> callback) {
+    public  void getWeatherData(String city, Callback<WeatherInfo> callback) {
         if (StringUtils.isEmpty(city)) {
             return;
         }
         WeatherInter weatherInter = retrofit.create(WeatherInter.class);
-        Call<Weather> weatherData = weatherInter.getWeatherData(city);
+        Call<WeatherInfo> weatherData = weatherInter.getWeatherData(city);
         weatherData.enqueue(callback);
     }
 }

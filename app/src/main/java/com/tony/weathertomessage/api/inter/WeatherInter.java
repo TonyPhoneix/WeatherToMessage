@@ -1,6 +1,6 @@
 package com.tony.weathertomessage.api.inter;
 
-import com.tony.weathertomessage.api.domain.Weather;
+import com.tony.weathertomessage.api.domain.WeatherInfo;
 
 import retrofit2.Call;
 import retrofit2.http.GET;
@@ -12,6 +12,6 @@ import retrofit2.http.Query;
 
 public interface WeatherInter {
 
-    @GET("json.shtml")
-    Call<Weather> getWeatherData(@Query("city") String city);
+    @GET("now")
+    Call<WeatherInfo> getWeatherData(@Query("cityid") String city);
 }

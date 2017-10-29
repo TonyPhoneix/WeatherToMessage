@@ -82,8 +82,9 @@ public class SharedPreferenceUtil {
         mPrefs.edit().putString(CITY_NAME, cityName).apply();
     }
 
+//    青浦
     public String getCityName() {
-        return mPrefs.getString(CITY_NAME, "青浦");
+        return mPrefs.getString(CITY_NAME, "WTW1HNSVUSCG");
     }
 
     public void setPhoneNumber(String phoneNumber) {

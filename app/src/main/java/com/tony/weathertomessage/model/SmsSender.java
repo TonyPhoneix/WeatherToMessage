@@ -35,11 +35,11 @@ public class SmsSender {
     public void sendSMS(String phoneNumber, String message) {
         //获取短信管理器
         SmsManager smsManager = SmsManager.getDefault();
-        if (message.length() > 70) {
             ArrayList<String> msgs = smsManager.divideMessage(message);
-            smsManager.sendMultipartTextMessage(phoneNumber, null, msgs, null, null);
-        } else {
-            smsManager.sendTextMessage(phoneNumber, null, message, null, null);
+//            smsManager.sendMultipartTextMessage(phoneNumber, null, msgs, null, null);
+        for (String sms :
+                msgs) {
+            smsManager.sendTextMessage(phoneNumber, null, sms, null, null);
         }
     }
 }

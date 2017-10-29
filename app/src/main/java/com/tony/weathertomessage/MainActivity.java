@@ -1,11 +1,14 @@
 package com.tony.weathertomessage;
 
-import android.app.AlarmManager;
-import android.app.PendingIntent;
+import android.annotation.TargetApi;
+import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
-import android.icu.util.Calendar;
-import android.icu.util.TimeZone;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.PowerManager;
+import android.provider.Settings;
 import android.support.annotation.IdRes;
 import android.support.v7.app.AppCompatActivity;
 import android.widget.Button;
@@ -15,7 +18,7 @@ import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.tony.weathertomessage.service.WeatherService;
+import com.tony.weathertomessage.service.AlarmWeatherService;
 import com.tony.weathertomessage.utils.SharedPreferenceUtil;
 import com.tony.weathertomessage.utils.StringUtils;
 import com.tony.weathertomessage.view.TimePickerDialogFragment;
@@ -25,6 +28,8 @@ import butterknife.ButterKnife;
 import butterknife.OnClick;
 
 public class MainActivity extends AppCompatActivity{
+
+    private static final int REQUEST_IGNORE_BATTERY_CODE = 1;
 
     @Bind(R.id.phone)
     EditText phone;
@@ -47,6 +52,7 @@ public class MainActivity extends AppCompatActivity{
     @Bind(R.id.start_Btn)
     Button startBtn;
     private SharedPreferenceUtil preferenceUtil;
+    private AlarmWeatherService alarmWeatherService;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,6 +61,7 @@ public class MainActivity extends AppCompatActivity{
         ButterKnife.bind(this);
 
         preferenceUtil = SharedPreferenceUtil.getInstance();
+        alarmWeatherService = new AlarmWeatherService(this);
 //        初始化一些默认值
         phone.setHint(preferenceUtil.getPhoneNumber());
         city.setHint(preferenceUtil.getCityName());
@@ -78,6 +85,11 @@ public class MainActivity extends AppCompatActivity{
                 }
             }
         });
+
+//        判断是否忽略电池优化
+        if (!isIgnoringBatteryOptimizations(MainActivity.this)) {
+            isIgnoreBatteryOption(MainActivity.this);
+        }
     }
 
     @OnClick(R.id.savePhone)
@@ -119,41 +131,54 @@ public class MainActivity extends AppCompatActivity{
 
     @OnClick(R.id.start_Btn)
     public void onClickStart() {
-            setAlarmTime();
+        alarmWeatherService.setAlarmTime();
+    }
+
+    @TargetApi(Build.VERSION_CODES.M)
+    public static boolean isIgnoringBatteryOptimizations(Activity activity){
+        String packageName = activity.getPackageName();
+        PowerManager pm = (PowerManager) activity
+                .getSystemService(Context.POWER_SERVICE);
+        if (pm.isIgnoringBatteryOptimizations(packageName)) {
+            return true;
+        }else {
+            return false;
+        }
     }
 
     /**
-     * 设置系统闹钟，并且重复唤醒服务
+     * 针对N以上的Doze模式
+     *
+     * @param activity
      */
-    private void setAlarmTime() {
-        int timeInterval = preferenceUtil.getTimeInterval();
-        int hour = preferenceUtil.getHour();
-        int minute = preferenceUtil.getMinute();
-
-        //        然后再设置时间，去唤醒Service
-        long systemTime = System.currentTimeMillis();
-        Calendar calendar = Calendar.getInstance();
-        calendar.setTimeInMillis(systemTime);
-// 这里时区需要设置一下，不然会有8个小时的时间差
-        calendar.setTimeZone(TimeZone.getTimeZone("GMT+8"));
-        calendar.set(Calendar.MINUTE, minute);
-        calendar.set(Calendar.HOUR_OF_DAY, hour);
-        calendar.set(Calendar.SECOND, 0);
-        calendar.set(Calendar.MILLISECOND, 0);
-// 选择的定时时间
-        long selectTime = calendar.getTimeInMillis();
-// 如果当前时间大于设置的时间，那么就从第二天的设定时间开始
-        if (systemTime > selectTime) {
-//            Toast.makeText(MainActivity.this, "设置的时间小于当前时间", Toast.LENGTH_SHORT).show();
-            calendar.add(Calendar.DAY_OF_MONTH, 1);
-            selectTime = calendar.getTimeInMillis();
+    public static void isIgnoreBatteryOption(Activity activity) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            try {
+                Intent intent = new Intent();
+                String packageName = activity.getPackageName();
+                PowerManager pm = (PowerManager) activity.getSystemService(Context.POWER_SERVICE);
+                if (!pm.isIgnoringBatteryOptimizations(packageName)) {
+//               intent.setAction(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS);
+                    intent.setAction(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
+                    intent.setData(Uri.parse("package:" + packageName));
+                    activity.startActivityForResult(intent, REQUEST_IGNORE_BATTERY_CODE);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
-        // 进行闹铃注册
-        AlarmManager am = (AlarmManager) getSystemService(ALARM_SERVICE);
-        Intent clock = new Intent(this, WeatherService.class);
-        PendingIntent sender = PendingIntent.getService(this, 1, clock, PendingIntent.FLAG_UPDATE_CURRENT);
-        am.setRepeating(AlarmManager.RTC_WAKEUP,
-                selectTime, timeInterval * 60 * 60 * 1000, sender);
-        Toast.makeText(MainActivity.this, "服务开启成功! ", Toast.LENGTH_SHORT).show();
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (resultCode == RESULT_OK) {
+            if (requestCode == REQUEST_IGNORE_BATTERY_CODE){
+                Toast.makeText(MainActivity.this, "已忽略电池优化", Toast.LENGTH_SHORT).show();
+            }
+        }else if (resultCode == RESULT_CANCELED){
+            if (requestCode == REQUEST_IGNORE_BATTERY_CODE){
+                Toast.makeText(MainActivity.this, "请开启忽略电池优化", Toast.LENGTH_SHORT).show();
+            }
+        }
     }
 }

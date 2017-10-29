@@ -1,6 +1,6 @@
 package com.tony.weathertomessage.model;
 
-import com.tony.weathertomessage.api.domain.Weather;
+import com.tony.weathertomessage.api.domain.WeatherInfo;
 
 import org.junit.Test;
 
@@ -22,19 +22,14 @@ public class WeatherManagerTest {
 
     @Test
     public void getWeatherData() throws Exception {
-        manager.getWeatherData("北京", new Callback<Weather>() {
+        manager.getWeatherData("北京", new Callback<WeatherInfo>() {
             @Override
-            public void onResponse(Call<Weather> call, Response<Weather> response) {
-                Weather beijing = response.body();
-                System.out.println(beijing);
-                Weather.DataBean data = beijing.getData();
-                System.out.println(data.getAqi());
-                System.out.println(data.getCity());
-                System.out.println(data.getForecast());
+            public void onResponse(Call<WeatherInfo> call, Response<WeatherInfo> response) {
+
             }
 
             @Override
-            public void onFailure(Call<Weather> call, Throwable t) {
+            public void onFailure(Call<WeatherInfo> call, Throwable t) {
 
             }
         });
